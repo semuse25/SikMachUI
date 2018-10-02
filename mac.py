@@ -446,9 +446,9 @@ class MyMainScreen(QtWidgets.QMainWindow):
                     x1 = 0
                 if y1 < 0 :
                     y1 = 0
-                if x2 < self.ui.image.shape[1] :
+                if x2 > self.ui.image.shape[1] :
                     x2 = self.ui.image.shape[1]
-                if y2 < self.ui.image.shape[0] :
+                if y2 > self.ui.image.shape[0] :
                     y2 = self.ui.image.shape[0]
 
 
