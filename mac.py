@@ -143,7 +143,7 @@ class Ui_MainWindow(object):
         self.pageJumpBtn.clicked.connect(self.pageJump)
         self.autoBtn = QtWidgets.QAction(QtGui.QIcon("icon/auto.png"),"자동 처리",self.toolbar2)
         self.autoBtn.setObjectName("actionAutoBtn")
-        self.segNetBtn.triggered.connect(self.auto)
+        self.autoBtn.triggered.connect(self.auto)
         self.segNetBtn = QtWidgets.QAction(QtGui.QIcon("icon/text.png"),"글자 영역 추출",self.toolbar2)
         self.segNetBtn.setObjectName("actionSegNetBtn")
         self.segNetBtn.triggered.connect(self.segNet)
@@ -329,7 +329,7 @@ class Ui_MainWindow(object):
             img = cv2.cvtColor(self.image,cv2.COLOR_BGR2GRAY)
             img = bgr_float32(img)
             self.segmap = load_segment_unload(img, config, segnet_model_path)
-        self.segmap = (segmap >= 0.5).astype(np.uint8) * 255
+        self.segmap = (self.segmap >= 0.5).astype(np.uint8) * 255
         self.maskList[self.fileIndex] = np.zeros(self.image.shape,np.uint8)
         self.maskList[self.fileIndex][:,:,2] = self.segmap
         self.mask = self.maskList[self.fileIndex]
@@ -446,9 +446,9 @@ class MyMainScreen(QtWidgets.QMainWindow):
                     x1 = 0
                 if y1 < 0 :
                     y1 = 0
-                if x2 < self.ui.image.shape[1] :
+                if x2 > self.ui.image.shape[1] :
                     x2 = self.ui.image.shape[1]
-                if y2 < self.ui.image.shape[0] :
+                if y2 > self.ui.image.shape[0] :
                     y2 = self.ui.image.shape[0]
 
 
