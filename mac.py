@@ -143,7 +143,7 @@ class Ui_MainWindow(object):
         self.pageJumpBtn.clicked.connect(self.pageJump)
         self.autoBtn = QtWidgets.QAction(QtGui.QIcon("icon/auto.png"),"자동 처리",self.toolbar2)
         self.autoBtn.setObjectName("actionAutoBtn")
-        self.segNetBtn.triggered.connect(self.auto)
+        self.autoBtn.triggered.connect(self.auto)
         self.segNetBtn = QtWidgets.QAction(QtGui.QIcon("icon/text.png"),"글자 영역 추출",self.toolbar2)
         self.segNetBtn.setObjectName("actionSegNetBtn")
         self.segNetBtn.triggered.connect(self.segNet)
@@ -329,7 +329,7 @@ class Ui_MainWindow(object):
             img = cv2.cvtColor(self.image,cv2.COLOR_BGR2GRAY)
             img = bgr_float32(img)
             self.segmap = load_segment_unload(img, config, segnet_model_path)
-        self.segmap = (segmap >= 0.5).astype(np.uint8) * 255
+        self.segmap = (self.segmap >= 0.5).astype(np.uint8) * 255
         self.maskList[self.fileIndex] = np.zeros(self.image.shape,np.uint8)
         self.maskList[self.fileIndex][:,:,2] = self.segmap
         self.mask = self.maskList[self.fileIndex]
@@ -344,7 +344,7 @@ class Ui_MainWindow(object):
             return None
         img = cv2.cvtColor(self.image,cv2.COLOR_BGR2GRAY)
         img = bgr_float32(img)
-        result = core.inpaint(img, segmap,
+        result = core.inpaint(img, self.segmap,
                       complnet, complnet_ckpt_dir,
                       dilate_kernel=dilate_kernel)
         self.doneList[self.fileIndex] = result
@@ -511,8 +511,8 @@ def load_segment_unload(img, config, segnet_model_path):
 
 if __name__ == "__main__":
     #TODO: 실행 전에 터지지 않는 적절한 값으로 딱 한번 초기화 할 것.
-    core.seg_limit   = 4000000 // 10 # 보통 이게 더 큼
-    core.compl_limit = 1492400 // 10 #
+    core.seg_limit   = 4000000 #// 10 # 보통 이게 더 큼
+    core.compl_limit = 1000000 #// 10 #
 
     segnet_yml = 'segnet/seg48_4[553].yml' # segnet configuration
     segnet_model_path = 'segnet/seg48_4[553].h5' # saved segnet model
