@@ -27,12 +27,15 @@ class Ui_MainWindow(object):
         self.back = None
         self.imgList = []
         self.maskList = []
+        self.doneList = []
         self.fileIndex = 0
         self.showMaskMode = False
+        self.showResultMode = False
         self.penColor = (0,0,255)
         self.penSize = 10
         self.mode = 'PEN'
         self.saveName = ''
+        self.segmap = None
 ##
 ##        print("Start Loading....")
 ##        #TODO: 실행 전에 터지지 않는 적절한 값으로 딱 한번 초기화 할 것.
@@ -138,11 +141,15 @@ class Ui_MainWindow(object):
         self.pageJumpBtn.setText('이동')
         self.pageJumpBtn.resize(20,20)
         self.pageJumpBtn.clicked.connect(self.pageJump)
+        self.autoBtn = QtWidgets.QAction(QtGui.QIcon("icon/auto.png"),"자동 처리",self.toolbar2)
+        self.autoBtn.setObjectName("actionAutoBtn")
+        self.segNetBtn.triggered.connect(self.auto)
         self.segNetBtn = QtWidgets.QAction(QtGui.QIcon("icon/text.png"),"글자 영역 추출",self.toolbar2)
         self.segNetBtn.setObjectName("actionSegNetBtn")
         self.segNetBtn.triggered.connect(self.segNet)
         self.complNetBtn = QtWidgets.QAction(QtGui.QIcon("icon/textClean.png"),"리드로잉",self.toolbar2)
         self.complNetBtn.setObjectName("actionComplNetBtn")
+        self.complNetBtn.triggered.connect(self.ComplNet)
         self.showMaskBtn = QtWidgets.QAction(QtGui.QIcon("icon/maskOn.png"),"마스크 보기",self.toolbar3)
         self.showMaskBtn.setObjectName("actionShowMaskBtn")
         self.showMaskBtn.triggered.connect(self.showMaskToggle)
@@ -173,6 +180,7 @@ class Ui_MainWindow(object):
         self.toolbar1.addWidget(self.pageJumpBtn)
         self.toolbar1.addAction(self.actionNextFile)
         #self.toolbar.addSeparator()
+        self.toolbar2.addAction(self.autoBtn)
         self.toolbar2.addAction(self.segNetBtn)
         self.toolbar2.addAction(self.complNetBtn)
         #self.toolbar.addSeparator()
@@ -254,6 +262,7 @@ class Ui_MainWindow(object):
             self.image = cv2.imread(self.imgList[self.fileIndex])
             self.mask = np.zeros(self.image.shape,np.uint8)
             self.maskList.append(self.mask)
+            self.doneList.append(None)
             self.origin = self.mask.copy()
             self.showImage()
             self.numOfPage.setText('/ 1')
@@ -263,6 +272,7 @@ class Ui_MainWindow(object):
         folderName = str(QtWidgets.QFileDialog.getExistingDirectory(None, "Select Directory"))
         self.imgList = []
         self.maskList = []
+        self.doneList = []
         self.saveName = folderName.split('/')[-1]
         for root, dirs, files in os.walk(folderName):
             for fname in files:
@@ -272,6 +282,7 @@ class Ui_MainWindow(object):
                     mask = np.zeros(img.shape,np.uint8)
                     self.maskList.append(mask)
                     self.imgList.append(fileName)
+                    self.doneList.append(None)
         self.fileIndex = 0
         self.image = cv2.imread(self.imgList[self.fileIndex])
         self.mask = self.maskList[self.fileIndex].copy()
@@ -291,7 +302,9 @@ class Ui_MainWindow(object):
             else:
                 qformat = QtGui.QImage.Format_RGB888
 
-        if self.showMaskMode is False:
+        if self.showResultMode is True:
+            img = QtGui.QImage(self.doneList[self.fileIndex], size[1], size[0], step, qformat)
+        elif self.showMaskMode is False:
             img = QtGui.QImage(self.image, size[1], size[0], step, qformat)
         else:
             gmask = cv2.cvtColor(self.mask, cv2.COLOR_BGR2GRAY)
@@ -312,36 +325,58 @@ class Ui_MainWindow(object):
         self.label.setGeometry(QtCore.QRect(5, 44, size[1], size[0]))
 
     def segNet(self):
-        img = cv2.cvtColor(self.image,cv2.COLOR_BGR2GRAY)
-        img = bgr_float32(img)
-        segmap = load_segment_unload(img, config, segnet_model_path)
-        segmap = (segmap >= 0.5).astype(np.uint8) * 255
+        if self.showResultMode is False:
+            img = cv2.cvtColor(self.image,cv2.COLOR_BGR2GRAY)
+            img = bgr_float32(img)
+            self.segmap = load_segment_unload(img, config, segnet_model_path)
+        self.segmap = (segmap >= 0.5).astype(np.uint8) * 255
         self.maskList[self.fileIndex] = np.zeros(self.image.shape,np.uint8)
-        self.maskList[self.fileIndex][:,:,2] = segmap
+        self.maskList[self.fileIndex][:,:,2] = self.segmap
         self.mask = self.maskList[self.fileIndex]
         self.origin = self.mask.copy()
         self.showMaskMode = True
+        self.showResultMode = False
         self.showMaskBtn.setIcon(QtGui.QIcon("icon/maskOff.png"))
         self.showImage()
 
+    def ComplNet(self):
+        if self.segmap is None:
+            return None
+        img = cv2.cvtColor(self.image,cv2.COLOR_BGR2GRAY)
+        img = bgr_float32(img)
+        result = core.inpaint(img, segmap,
+                      complnet, complnet_ckpt_dir,
+                      dilate_kernel=dilate_kernel)
+        self.doneList[self.fileIndex] = result
+        self.image = result
+        self.showResultMode = True
+        self.showImage()
+        self.showMaskMode = False
+        self.showMaskBtn.setIcon(QtGui.QIcon("icon/maskOn.png"))
+
+    def auto(self):
+        self.segNet()
+        self.ComplNet()
+
     def showMaskToggle(self):
-        if self.showMaskMode is True:
-            self.showMaskMode = False
-            self.showMaskBtn.setIcon(QtGui.QIcon("icon/maskOn.png"))
-        else:
-            self.showMaskMode = True
-            self.showMaskBtn.setIcon(QtGui.QIcon("icon/maskOff.png"))
+        if self.showResultMode is False:
+            if self.showMaskMode is True:
+                self.showMaskMode = False
+                self.showMaskBtn.setIcon(QtGui.QIcon("icon/maskOn.png"))
+            else:
+                self.showMaskMode = True
+                self.showMaskBtn.setIcon(QtGui.QIcon("icon/maskOff.png"))
 
         self.showImage()
 
     def saveImage(self):
         if len(self.imgList) == 1:
-            cv2.imwrite('./cleaned/' + self.saveName,self.maskList[0])
+            cv2.imwrite('./cleaned/' + self.saveName,self.doneList[0])
         else:
             if not os.path.isdir('./cleaned/'+self.saveName):
                 os.mkdir('./cleaned/'+self.saveName)
             for i in range(len(self.maskList)):
-                cv2.imwrite('./cleaned/' + self.saveName + '/' + str(i)+'.jpg',self.maskList[i])
+                cv2.imwrite('./cleaned/' + self.saveName + '/' + str(i)+'.jpg',self.doneList[i])
 
 
 
