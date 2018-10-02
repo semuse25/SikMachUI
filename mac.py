@@ -344,7 +344,7 @@ class Ui_MainWindow(object):
             return None
         img = cv2.cvtColor(self.image,cv2.COLOR_BGR2GRAY)
         img = bgr_float32(img)
-        result = core.inpaint(img, segmap,
+        result = core.inpaint(img, self.segmap,
                       complnet, complnet_ckpt_dir,
                       dilate_kernel=dilate_kernel)
         self.doneList[self.fileIndex] = result
@@ -511,8 +511,8 @@ def load_segment_unload(img, config, segnet_model_path):
 
 if __name__ == "__main__":
     #TODO: 실행 전에 터지지 않는 적절한 값으로 딱 한번 초기화 할 것.
-    core.seg_limit   = 4000000 // 10 # 보통 이게 더 큼
-    core.compl_limit = 1492400 // 10 #
+    core.seg_limit   = 4000000 #// 10 # 보통 이게 더 큼
+    core.compl_limit = 1000000 #// 10 #
 
     segnet_yml = 'segnet/seg48_4[553].yml' # segnet configuration
     segnet_model_path = 'segnet/seg48_4[553].h5' # saved segnet model
