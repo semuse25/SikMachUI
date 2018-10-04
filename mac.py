@@ -36,45 +36,27 @@ class Ui_MainWindow(object):
         self.mode = 'PEN'
         self.saveName = ''
         self.segmap = None
-##
-##        print("Start Loading....")
-##        #TODO: 실행 전에 터지지 않는 적절한 값으로 딱 한번 초기화 할 것.
-##        core.seg_limit   = 4000000 # 보통 이게 더 큼
-##        core.compl_limit = 1492400 #
-##
-##        segnet_yml = 'segnet/seg48_4[553].yml' # segnet configuration
-##        segnet_model_path = 'segnet/seg48_4[553].h5' # saved segnet model
-##
-##        complnet_ckpt_dir = 'v2_180923' # saved complnets directory
-##        #--------------------------------------------
-##        # for segnet
-##        with open(segnet_yml,'r') as f:
-##            self.config = yaml.load(f)
-##
-##        # for complnet
-##        self.complnet = InpaintCAModel('v2')
-##
-##        ng.get_gpus(1,False) #TODO: 단 한 번만 호출할 것.
-##        #--------------------------------------------
-##        self.dilate_kernel = core.rect5
-##        print("Loading Complete")
 
 
     def setupUi(self, MainWindow):
         self.init()
+
+
+        width, height = 1366, 768
+
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1280,680)
+        MainWindow.resize(width,height-80)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.scrollArea = QtWidgets.QScrollArea(self.centralwidget)
-        self.scrollArea.setGeometry(QtCore.QRect(0, 0, 999, 649))
+        self.scrollArea.setGeometry(QtCore.QRect(0, 0, width-250, 649))
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 797, 597))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, width-250, 597))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.label = QtWidgets.QLabel(self.scrollAreaWidgetContents)
-        self.label.setGeometry(QtCore.QRect(5, 44, 491, 451))
+        self.label.setGeometry(QtCore.QRect(5, 44, width-260, 451))
         self.label.setObjectName("label")
         self.label.setMouseTracking(True)
         self.scrollArea.setWidget(self.label)
@@ -82,16 +64,16 @@ class Ui_MainWindow(object):
 
         #menu bar item
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, width, 21))
         self.menubar.setObjectName("menubar")
         self.toolbar1 = QtWidgets.QToolBar(MainWindow)
-        self.toolbar1.setGeometry(QtCore.QRect(1000, 22, 250, 30))
+        self.toolbar1.setGeometry(QtCore.QRect(width-250, 22, 250, 30))
         self.toolbar1.setObjectName("toolbar1")
         self.toolbar2 = QtWidgets.QToolBar(MainWindow)
-        self.toolbar2.setGeometry(QtCore.QRect(1000, 52, 250, 30))
+        self.toolbar2.setGeometry(QtCore.QRect(width-250, 52, 250, 30))
         self.toolbar2.setObjectName("toolbar2")
         self.toolbar3 = QtWidgets.QToolBar(MainWindow)
-        self.toolbar3.setGeometry(QtCore.QRect(1000, 82, 250, 30))
+        self.toolbar3.setGeometry(QtCore.QRect(width-250, 82, 250, 30))
         self.toolbar3.setObjectName("toolbar3")
         self.menu = QtWidgets.QMenu(self.menubar)
         self.menu.setObjectName("menu")
@@ -321,8 +303,8 @@ class Ui_MainWindow(object):
         #print(size)
         #self.resize(self.label.pixmap().size())
         #MainWindow.resize(size[1]+20,size[0]+16)
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(5, 44, size[1], size[0]))
-        self.label.setGeometry(QtCore.QRect(5, 44, size[1], size[0]))
+##        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(5, 44, size[1], size[0]))
+##        self.label.setGeometry(QtCore.QRect(5, 44, size[1], size[0]))
 
     def segNet(self):
         if self.showResultMode is False:
@@ -534,6 +516,12 @@ if __name__ == "__main__":
     if not os.path.isdir('./cleaned'):
         os.mkdir('./cleaned')
     app = QtWidgets.QApplication(sys.argv)
+    screen = app.primaryScreen()
+    print('Screen: %s' % screen.name())
+    size = screen.size()
+    print('Size: %d x %d' % (size.width(), size.height()))
+    rect = screen.availableGeometry()
+    print('Available: %d x %d' % (rect.width(), rect.height()))
     MainWindow = MyMainScreen()
     MainWindow.show()
     #app.exec_()
